@@ -264,11 +264,10 @@ private fun VirusBytesApp(context: Context) {
                 if (page == "Splash") {
                     SplashScreen()
                 } else {
-                    if (page != "Drawer") {
+                    if (page == "Home") {
                         AppTopBar(
                             onMenu = { page = "Drawer" },
-                            onSettings = { page = "Settings" },
-                            online = online
+                            onSettings = { page = "Settings" }
                         )
                     }
                     Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -404,31 +403,23 @@ private fun SplashScreen() {
 }
 
 @Composable
-private fun AppTopBar(onMenu: () -> Unit, onSettings: () -> Unit, online: Boolean) {
+private fun AppTopBar(onMenu: () -> Unit, onSettings: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 19.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onMenu, modifier = Modifier.size(34.dp)) {
-            Icon(Icons.Default.Menu, null, tint = Muted, modifier = Modifier.size(21.dp))
+        Row(
+            Modifier.clickable { onMenu() },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Shield, null, tint = Blue, modifier = Modifier.size(25.dp))
+            Spacer(Modifier.width(7.dp))
+            Text("Virus", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Bytes", color = Cyan, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
-        Icon(Icons.Default.Shield, null, tint = Blue, modifier = Modifier.size(25.dp))
-        Spacer(Modifier.width(7.dp))
-        Text("Virus", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text("Bytes", color = Cyan, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.weight(1f))
-        Surface(color = Card, shape = CircleShape) {
-            Row(
-                Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(Modifier.size(7.dp).background(if (online) Green else Amber, CircleShape))
-                Spacer(Modifier.width(6.dp))
-                Text(if (online) "Connected" else "Offline", color = Muted, fontSize = 10.sp)
-            }
-        }
         IconButton(onClick = onSettings, modifier = Modifier.size(38.dp)) {
-            Icon(Icons.Default.Settings, null, tint = Muted, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.Settings, null, tint = Muted, modifier = Modifier.size(21.dp))
         }
     }
 }
