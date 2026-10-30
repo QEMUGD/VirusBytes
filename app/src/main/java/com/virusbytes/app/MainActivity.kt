@@ -53,7 +53,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        setContent { VirusBytesApp(this) }
+        setContent {
+            Box(Modifier.fillMaxSize().background(Night), contentAlignment = Alignment.Center) {
+                Box(Modifier.widthIn(max = 460.dp).fillMaxWidth().fillMaxHeight()) {
+                    VirusBytesApp(this@MainActivity)
+                }
+            }
+        }
     }
 }
 
