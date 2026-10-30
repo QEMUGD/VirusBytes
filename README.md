@@ -10,7 +10,8 @@ VirusBytes is a responsive security dashboard for on-demand file and URL checks 
 - Analysis status polling, detection totals, and individual engine verdicts.
 - Recent scan history stored locally in the current browser.
 - Server-side API key handling; the key is never delivered to browser JavaScript.
-- Submission consent prompt and API request rate limiting.
+- Submission consent prompt and request rate limiting.
+- A shared server-side request queue spaces VirusTotal API calls at least 15 seconds apart.
 
 ## Important limitations
 
@@ -20,7 +21,7 @@ A result with zero detections does not prove an item is safe. Engine coverage an
 
 Files and URLs submitted to the public VirusTotal service may be shared with VirusTotal's security community and security partners. Never submit confidential, personal, proprietary, or otherwise sensitive material. Use VirusTotal's private-scanning service only if your account has the required entitlement and your data-handling policy permits it.
 
-The public VirusTotal API has strict quotas. This app limits new scan submissions to four per minute per running server instance; your account's plan and current VirusTotal terms apply.
+The public VirusTotal API has strict quotas. The app serializes all outgoing API requests and spaces them at least 15 seconds apart, targeting no more than four requests per minute per server process. Your account's plan and current VirusTotal terms apply. When deploying multiple app instances, use a shared distributed rate limiter to coordinate their API calls.
 
 ## Setup
 
