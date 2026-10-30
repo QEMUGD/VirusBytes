@@ -579,7 +579,7 @@ private fun FileScanScreen(
             listOf("File", "Apps").forEach { mode ->
                 Box(
                     Modifier.weight(1f).clip(RoundedCornerShape(10.dp))
-                        .background(if (fileMode == mode) BlueWash else Color.Transparent)
+                        .background(if (fileMode == mode) BlueWash else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)))
                         .clickable { onMode(mode) }.padding(vertical = 11.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1178,7 +1178,7 @@ private fun GradientButton(
     } else BlueGlow
     Box(
         modifier.clip(RoundedCornerShape(13.dp))
-            .background(if (enabled) brush else Card3)
+            .background(if (enabled) brush else Brush.horizontalGradient(listOf(Card3, Card3)))
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
