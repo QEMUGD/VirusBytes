@@ -33,6 +33,26 @@ const upload = multer({
   limits: { fileSize: 32 * 1024 * 1024, files: 1 }
 });
 
+// Serialize all upstream requests and leave at least 15 seconds between them.
+// This keeps submissions and analysis polling under the public API's 4/minute quota.
+const VT_REQUEST_INTERVAL_MS = 15_000;
+let nextVirusTotalRequestAt = 0;
+let virusTotalQueue = Promise.resolve();
+
+function fetchVirusTotal(url, options) {
+  const request = virusTotalQueue.then(async () => {
+    const wait = Math.max(0, nextVirusTotalRequestAt - Date.now());
+    if (wait > 0) {
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+    nextVirusTotalRequestAt = Date.now() + VT_REQUEST_INTERVAL_MS;
+    return fetch(url, options);
+  });
+
+  virusTotalQueue = request.then(() => undefined, () => undefined);
+  return request;
+}
+
 function requireApiKey(_req, res, next) {
   if (!VT_API_KEY) {
     return res.status(503).json({
@@ -53,7 +73,7 @@ async function parseVirusTotalResponse(response) {
 
   if (!response.ok) {
     const message = payload?.error?.message || "VirusTotal could not process this request.";
-    const status = response.status === 429 ? 429 : response.status === 401 || response.status === 403 ? 502 : 502;
+    const status = response.status === 429 ? 429 : 502;
     const error = new Error(message);
     error.status = status;
     throw error;
@@ -78,7 +98,7 @@ app.post("/api/scan/file", scanLimiter, requireApiKey, upload.single("file"), as
     const body = new FormData();
     body.append("file", new Blob([req.file.buffer], { type: req.file.mimetype || "application/octet-stream" }), req.file.originalname);
 
-    const response = await fetch("https://www.virustotal.com/api/v3/files", {
+    const response = await fetchVirusTotal("https://www.virustotal.com/api/v3/files", {
       method: "POST",
       headers: { "x-apikey": VT_API_KEY },
       body
@@ -113,7 +133,7 @@ app.post("/api/scan/url", scanLimiter, requireApiKey, async (req, res, next) => 
     }
 
     const body = new URLSearchParams({ url: parsed.toString() });
-    const response = await fetch("https://www.virustotal.com/api/v3/urls", {
+    const response = await fetchVirusTotal("https://www.virustotal.com/api/v3/urls", {
       method: "POST",
       headers: {
         "x-apikey": VT_API_KEY,
@@ -139,7 +159,7 @@ app.get("/api/analyses/:id", pollLimiter, requireApiKey, async (req, res, next) 
       return res.status(400).json({ error: "Invalid analysis identifier." });
     }
 
-    const response = await fetch(
+    const response = await fetchVirusTotal(
       `https://www.virustotal.com/api/v3/analyses/${encodeURIComponent(id)}`,
       { headers: { "x-apikey": VT_API_KEY } }
     );
@@ -160,7 +180,7 @@ app.use((error, _req, res, _next) => {
 
   const status = Number(error.status) || 500;
   if (status === 429) {
-    return res.status(429).json({ error: "VirusTotal's rate limit was reached. Please wait before scanning again." });
+    return res.status(429).json({ error: "VirusTotal's rate limit was reached. Please wait before trying again." });
   }
   if (status >= 500) {
     console.error("VirusBytes request failed:", error.message);
